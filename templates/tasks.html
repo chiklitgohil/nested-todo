@@ -1,0 +1,23 @@
+{% macro render_task(task) %}
+<li>
+    <form action="/toggle/{{ task.id }}">
+        <input type="checkbox" onchange="this.form.submit()" {% if task.is_done %}checked{% endif %}>
+        <span class="{% if task.is_done %}done{% endif %}">{{ task.title }}</span>
+    </form>
+
+    <form action="/add" method="post" class="inline-form">
+        <input type="hidden" name="parent_id" value="{{ task.id }}">
+        <input type="text" name="title" placeholder="Add subtask">
+    </form>
+
+    <a href="/delete/{{ task.id }}">Delete</a>
+
+    {% if task.children and task.children|length > 0 %}
+        <ul>
+            {% for child in task.children %}
+                {{ render_task(child) }}
+            {% endfor %}
+        </ul>
+    {% endif %}
+</li>
+{% endmacro %}

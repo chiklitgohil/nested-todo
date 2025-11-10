@@ -1,0 +1,32 @@
+body {
+    font-family: sans-serif;
+    max-width: 700px;
+    margin: 30px auto;
+    background: #fafafa;
+    color: #333;
+}
+
+h1 {
+    text-align: center;
+}
+
+ul {
+    list-style-type: none;
+    padding-left: 20px;
+}
+
+.done {
+    text-decoration: line-through;
+    color: gray;
+}
+
+form.add-form {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 20px;
+}
+
+form.inline-form {
+    display: inline;
+    margin-left: 10px;
+}

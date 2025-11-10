@@ -1,0 +1,16 @@
+{% extends "layout.html" %}
+{% from "tasks.html" import render_task %}
+{% block content %}
+<h1>Nested To-Do List</h1>
+
+<form action="/add" method="post" class="add-form">
+    <input type="text" name="title" placeholder="Add new task" required>
+    <button type="submit">Add</button>
+</form>
+
+<ul class="tasks">
+    {% for task in tasks %}
+        {{ render_task(task) }}
+    {% endfor %}
+</ul>
+{% endblock %}
