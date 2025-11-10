@@ -1,28 +1,30 @@
 {% macro render_task(task) %}
-<li>
-    <form action="/toggle/{{ task.id }}" method="get" style="display:inline;">
-        <input type="checkbox" onchange="this.form.submit()" {% if task.is_done %}checked{% endif %}>
-    </form>
+<li style="--depth: {{ loop.depth0 }}">
+    <div class="task-row">
+        <button type="button" class="collapse-btn" onclick="toggleSubtasks({{ task.id }})">▼</button>
 
-    <span class="{% if task.is_done %}done{% endif %}" id="title-{{ task.id }}">{{ task.title }}</span>
+        <form action="/toggle/{{ task.id }}" method="get" class="inline">
+            <input type="checkbox" onchange="this.form.submit()" {% if task.is_done %}checked{% endif %}>
+        </form>
 
-    <!-- Edit form (hidden by default) -->
-    <form action="/edit/{{ task.id }}" method="post" class="inline-form" id="edit-form-{{ task.id }}" style="display:none;">
-        <input type="text" name="new_title" value="{{ task.title }}">
-        <button type="submit">Save</button>
-    </form>
+        <span class="{% if task.is_done %}done{% endif %}" id="title-{{ task.id }}">{{ task.title }}</span>
 
-    <button type="button" onclick="showEditForm({{ task.id }})">Edit</button>
+        <form action="/edit/{{ task.id }}" method="post" class="inline" id="edit-form-{{ task.id }}" style="display:none;">
+            <input type="text" name="new_title" value="{{ task.title }}">
+            <button type="submit">Save</button>
+        </form>
 
-    <form action="/add" method="post" class="inline-form">
-        <input type="hidden" name="parent_id" value="{{ task.id }}">
-        <input type="text" name="title" placeholder="Add subtask">
-    </form>
+        <button type="button" class="edit-btn" onclick="showEditForm({{ task.id }})">✏️</button>
+        <a href="/delete/{{ task.id }}" class="delete-btn">🗑️</a>
 
-    <a href="/delete/{{ task.id }}">Delete</a>
+        <form action="/add" method="post" class="inline add-subtask">
+            <input type="hidden" name="parent_id" value="{{ task.id }}">
+            <input type="text" name="title" placeholder="+ Add subtask">
+        </form>
+    </div>
 
     {% if task.children and task.children|length > 0 %}
-        <ul>
+        <ul id="children-{{ task.id }}">
             {% for child in task.children %}
                 {{ render_task(child) }}
             {% endfor %}

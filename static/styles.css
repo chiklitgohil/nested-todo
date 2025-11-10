@@ -1,40 +1,113 @@
+:root {
+    --bg: #fdfdfd;
+    --fg: #222;
+    --accent: #3a6df0;
+    --done: #999;
+    --border: #ddd;
+    --depth-indent: 1.5rem;
+}
+
+body.dark {
+    --bg: #121212;
+    --fg: #f1f1f1;
+    --accent: #7ca9ff;
+    --done: #777;
+    --border: #333;
+}
+
 body {
-    font-family: sans-serif;
-    max-width: 700px;
-    margin: 30px auto;
-    background: #fafafa;
-    color: #333;
+    font-family: system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    margin: 0;
+    padding: 0 20px;
+    transition: background 0.3s, color 0.3s;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 0;
 }
 
 h1 {
-    text-align: center;
+    font-size: 1.6rem;
 }
 
-ul {
-    list-style-type: none;
-    padding-left: 20px;
+#theme-toggle {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.2rem;
+}
+
+ul.tasks {
+    list-style: none;
+    padding-left: 0;
+}
+
+li {
+    padding: 6px 0;
+    margin-left: calc(var(--depth) * var(--depth-indent));
+}
+
+.task-row {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(0, 0, 0, 0.03);
+    padding: 5px 10px;
+    border-radius: 8px;
+    transition: background 0.2s;
+}
+
+body.dark .task-row {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.task-row:hover {
+    background: rgba(0, 0, 0, 0.08);
 }
 
 .done {
     text-decoration: line-through;
-    color: gray;
+    color: var(--done);
 }
 
-form.add-form {
-    display: flex;
-    gap: 5px;
-    margin-bottom: 20px;
+input[type="text"] {
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 3px 6px;
 }
 
-form.inline-form {
-    display: inline;
-    margin-left: 10px;
+button, a {
+    cursor: pointer;
+    text-decoration: none;
+    color: var(--fg);
+    background: none;
+    border: none;
+    font-size: 0.9rem;
 }
 
-button {
-    margin-left: 5px;
+button:hover, a:hover {
+    color: var(--accent);
 }
 
-.inline-form input[type="text"] {
-    padding: 2px 5px;
+.collapse-btn {
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transform: rotate(0deg);
+    transition: transform 0.2s;
+}
+
+.collapsed {
+    display: none;
+}
+
+.add-subtask input[type="text"] {
+    width: 150px;
+    font-size: 0.9rem;
 }

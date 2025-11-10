@@ -6,23 +6,46 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
+    <header>
+        <h1>Nested To-Do List</h1>
+        <button id="theme-toggle">🌙</button>
+    </header>
+
     <main>
         {% block content %}{% endblock %}
     </main>
 
-<script>
-function showEditForm(id) {
-    const title = document.getElementById('title-' + id);
-    const form = document.getElementById('edit-form-' + id);
-    if (title.style.display === 'none') {
-        title.style.display = 'inline';
-        form.style.display = 'none';
-    } else {
-        title.style.display = 'none';
-        form.style.display = 'inline';
+    <script>
+    // --- Collapse/Expand ---
+    function toggleSubtasks(id) {
+        const subtasks = document.getElementById('children-' + id);
+        if (!subtasks) return;
+        subtasks.classList.toggle('collapsed');
     }
-}
-</script>
-</body>
 
+    // --- Edit toggle (unchanged) ---
+    function showEditForm(id) {
+        const title = document.getElementById('title-' + id);
+        const form = document.getElementById('edit-form-' + id);
+        if (title.style.display === 'none') {
+            title.style.display = 'inline';
+            form.style.display = 'none';
+        } else {
+            title.style.display = 'none';
+            form.style.display = 'inline';
+        }
+    }
+
+    // --- Dark/Light Mode ---
+    const themeBtn = document.getElementById('theme-toggle');
+    themeBtn.onclick = () => {
+        document.body.classList.toggle('dark');
+        localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
+    };
+
+    window.onload = () => {
+        if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark');
+    };
+    </script>
+</body>
 </html>
