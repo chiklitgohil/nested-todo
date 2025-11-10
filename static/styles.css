@@ -30,3 +30,11 @@ form.inline-form {
     display: inline;
     margin-left: 10px;
 }
+
+button {
+    margin-left: 5px;
+}
+
+.inline-form input[type="text"] {
+    padding: 2px 5px;
+}

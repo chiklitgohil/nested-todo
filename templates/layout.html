@@ -9,5 +9,20 @@
     <main>
         {% block content %}{% endblock %}
     </main>
+
+<script>
+function showEditForm(id) {
+    const title = document.getElementById('title-' + id);
+    const form = document.getElementById('edit-form-' + id);
+    if (title.style.display === 'none') {
+        title.style.display = 'inline';
+        form.style.display = 'none';
+    } else {
+        title.style.display = 'none';
+        form.style.display = 'inline';
+    }
+}
+</script>
 </body>
+
 </html>

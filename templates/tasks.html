@@ -1,9 +1,18 @@
 {% macro render_task(task) %}
 <li>
-    <form action="/toggle/{{ task.id }}">
+    <form action="/toggle/{{ task.id }}" method="get" style="display:inline;">
         <input type="checkbox" onchange="this.form.submit()" {% if task.is_done %}checked{% endif %}>
-        <span class="{% if task.is_done %}done{% endif %}">{{ task.title }}</span>
     </form>
+
+    <span class="{% if task.is_done %}done{% endif %}" id="title-{{ task.id }}">{{ task.title }}</span>
+
+    <!-- Edit form (hidden by default) -->
+    <form action="/edit/{{ task.id }}" method="post" class="inline-form" id="edit-form-{{ task.id }}" style="display:none;">
+        <input type="text" name="new_title" value="{{ task.title }}">
+        <button type="submit">Save</button>
+    </form>
+
+    <button type="button" onclick="showEditForm({{ task.id }})">Edit</button>
 
     <form action="/add" method="post" class="inline-form">
         <input type="hidden" name="parent_id" value="{{ task.id }}">

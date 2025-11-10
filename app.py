@@ -74,6 +74,19 @@ def delete(task_id):
     conn.close()
     return redirect("/")
 
+@app.route("/edit/<int:task_id>", methods=["POST"])
+def edit(task_id):
+    new_title = request.form.get("new_title")
+    if not new_title.strip():
+        return redirect("/")
+
+    conn = get_db_connection()
+    conn.execute("UPDATE tasks SET title = ? WHERE id = ?", (new_title, task_id))
+    conn.commit()
+    conn.close()
+    return redirect("/")
+
+
 
 def delete_recursive(conn, task_id):
     """Recursively delete a task and its subtasks."""
