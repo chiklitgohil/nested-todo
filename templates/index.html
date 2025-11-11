@@ -2,68 +2,265 @@
 {% from "tasks.html" import render_task %}
 
 {% block content %}
-<h2 class="mb-3 text-center">Nested To-Do List</h2>
+<div class="sidebar p-3" id="sidebar">
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <div class="d-flex align-items-center gap-2">
+      <img src="{{ url_for('static', filename='logo.png') }}" alt="logo" class="logo" onerror="this.style.display='none'">
+      <strong>Nested To-Do</strong>
+    </div>
+    <button class="btn btn-sm btn-outline-secondary" id="sidebar-toggle" onclick="toggleSidebar()">
+      <i class="fa-solid fa-bars"></i>
+    </button>
+  </div>
 
-<form action="/add" method="post" class="d-flex mb-3 gap-2">
-  <input type="text" name="title" class="form-control" placeholder="Add a new task..." required>
-  <button type="submit" class="btn btn-primary">Add</button>
-</form>
+  <div class="mb-3">
+    <div class="list-group">
+      <button class="list-group-item list-group-item-action active" onclick="loadList('all')">All</button>
+      <button class="list-group-item list-group-item-action" onclick="loadList('myday')">My Day <span id="myday-count" class="badge bg-secondary ms-2">0</span></button>
+      <button class="list-group-item list-group-item-action" onclick="loadList('inbox')">Inbox</button>
+    </div>
+  </div>
 
-<ul class="list-group border rounded shadow-sm">
-  {% for task in tasks %}
-    {{ render_task(task) }}
-  {% endfor %}
-</ul>
+  <hr>
 
-<!-- scripts must come after the list so elements exist -->
+  <div id="categories">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <strong>Lists</strong>
+      <button class="btn btn-sm btn-outline-primary" onclick="promptAddCategory()">+ Add</button>
+    </div>
+    <div id="category-list">
+      {% for c in categories %}
+        <button class="list-group-item list-group-item-action" onclick="loadList('{{ c }}')">{{ c }}</button>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<div class="main-area p-3">
+  <div class="top-add mb-3">
+    <form id="add-form" class="d-flex gap-2" onsubmit="submitAddForm(event)">
+      <input id="add-title" name="title" class="form-control" placeholder="Add a new task">
+      <button class="btn btn-primary">Add</button>
+    </form>
+  </div>
+
+  <div class="content-grid">
+    <div class="task-list-pane">
+      <ul class="list-group shadow-sm" id="task-list">
+        {% for task in tasks %}
+          {{ render_task(task) }}
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div class="detail-pane border-start ps-3" id="detail-pane">
+      <div id="no-selection" class="text-muted">Select a task to view details</div>
+
+      <div id="task-detail" class="d-none">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <h5 id="detail-title" onclick="enableTitleEdit()" class="mb-0"></h5>
+          <div id="detail-progress" style="width: 40%;"></div>
+        </div>
+
+        <textarea id="detail-desc" class="form-control mb-2" rows="8" placeholder="Add description..."></textarea>
+        <div class="mt-2">
+          <strong>Subtasks</strong>
+          <ul id="detail-children" class="list-group mt-2"></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+
 <script>
-function enableEdit(id) {
-  document.getElementById('task-title-' + id).classList.add('d-none');
-  const input = document.getElementById('task-input-' + id);
-  input.classList.remove('d-none');
-  input.focus();
-}
+/* ---------- utility and UI logic ---------- */
 
-function handleKey(e, id) {
-  if (e.key === 'Enter') {
-    e.preventDefault();
-    saveEdit(id);
-  }
-}
+let selectedTaskId = null;
+let autosaveTimer = null;
+const AUTOSAVE_MS = 1000;
 
-function saveEdit(id) {
-  const newText = document.getElementById('task-input-' + id).value.trim();
-  if (!newText) return;
-  fetch('/edit/' + id, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: 'new_title=' + encodeURIComponent(newText)
-  }).then(() => location.reload());
-}
-
-function showAddSubtask(parentId) {
-  const title = prompt('Subtask title:');
-  if (!title) return;
-  const data = 'title=' + encodeURIComponent(title) + '&parent_id=' + encodeURIComponent(parentId);
-  fetch('/add', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: data
-  }).then(() => location.reload());
-}
-
-// show/hide hover actions
+// initialize hover actions
 document.addEventListener('DOMContentLoaded', () => {
-  document.querySelectorAll('.task-item').forEach(item => {
-    item.addEventListener('mouseenter', () => {
-      const actions = item.querySelector('.task-actions');
+  document.querySelectorAll('.task-row').forEach(row => {
+    row.addEventListener('mouseenter', () => {
+      const actions = row.querySelector('.task-actions');
       if (actions) actions.classList.remove('opacity-0');
     });
-    item.addEventListener('mouseleave', () => {
-      const actions = item.querySelector('.task-actions');
+    row.addEventListener('mouseleave', () => {
+      const actions = row.querySelector('.task-actions');
       if (actions) actions.classList.add('opacity-0');
     });
   });
+  updateMyDayCount();
 });
+
+/* Sidebar */
+function toggleSidebar(){
+  document.getElementById('sidebar').classList.toggle('collapsed');
+}
+
+/* Loading lists via API */
+function loadList(name){
+  fetch('/api/list/' + encodeURIComponent(name))
+    .then(r => r.json())
+    .then(data => {
+      renderTaskList(data.tasks);
+    });
+}
+
+/* Render task list (replace inner HTML) */
+function renderTaskList(tasks){
+  const container = document.getElementById('task-list');
+  container.innerHTML = '';
+  // insert rendered HTML from server macro by fetching the page? simple approach: reload page section
+  // but we can build minimal HTML here. For speed, reload page if server side rendering needed.
+  // fallback: reload entire page to keep things simple for now
+  location.reload();
+}
+
+/* Add new top-level task */
+function submitAddForm(ev){
+  ev.preventDefault();
+  const title = document.getElementById('add-title').value.trim();
+  if (!title) return;
+  fetch('/api/add', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+    body: 'title=' + encodeURIComponent(title)
+  }).then(()=> location.reload());
+}
+
+/* Select task and populate detail pane */
+function selectTask(id){
+  selectedTaskId = id;
+  fetch('/api/task/' + id)
+    .then(r => r.json())
+    .then(task => {
+      document.getElementById('no-selection').classList.add('d-none');
+      const detail = document.getElementById('task-detail');
+      detail.classList.remove('d-none');
+      document.getElementById('detail-title').textContent = task.title;
+      document.getElementById('detail-desc').value = task.description || '';
+      // progress
+      const p = task.progress && task.progress.percent ? task.progress.percent : 0;
+      document.getElementById('detail-progress').innerHTML = `<div class="progress" style="height:8px"><div class="progress-bar" role="progressbar" style="width:${p}%"></div></div>`;
+      // children immediate
+      const list = document.getElementById('detail-children');
+      list.innerHTML = '';
+      (task.children || []).forEach(c => {
+        const li = document.createElement('li');
+        li.className = 'list-group-item d-flex justify-content-between align-items-center';
+        li.innerHTML = `<span onclick="selectTask(${c.id})" style="cursor:pointer">${c.title}</span>
+                        <input type="checkbox" ${c.is_done ? 'checked' : ''} onchange="toggleDone(${c.id})">`;
+        list.appendChild(li);
+      });
+      highlightSelectedInList(id);
+    });
+}
+
+/* Highlight selected in middle pane */
+function highlightSelectedInList(id){
+  document.querySelectorAll('.task-row').forEach(row=>{
+    row.classList.toggle('active-task', parseInt(row.dataset.taskId) === parseInt(id));
+  });
+}
+
+/* Autosave description (debounced) */
+document.getElementById('detail-desc')?.addEventListener('input', () => {
+  if (!selectedTaskId) return;
+  clearTimeout(autosaveTimer);
+  autosaveTimer = setTimeout(()=> {
+    const text = document.getElementById('detail-desc').value;
+    fetch('/api/task/' + selectedTaskId + '/description', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({description: text})
+    });
+  }, AUTOSAVE_MS);
+});
+
+/* Title edit/save */
+function enableTitleEdit(){
+  if (!selectedTaskId) return;
+  const titleEl = document.getElementById('detail-title');
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'form-control';
+  input.value = titleEl.textContent;
+  titleEl.replaceWith(input);
+  input.focus();
+  input.onblur = function(){
+    const val = input.value.trim();
+    if (!val) { input.replaceWith(titleEl); return; }
+    fetch('/api/task/' + selectedTaskId + '/title', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({title: val})
+    }).then(()=> location.reload());
+  };
+}
+
+/* Toggle done via API */
+function toggleDone(id){
+  fetch('/api/task/' + id + '/toggle', {method:'POST'}).then(()=> {
+    // refresh detail if currently selected or reload list
+    if (selectedTaskId) selectTask(selectedTaskId);
+    else location.reload();
+  });
+}
+
+/* Save title from list inline */
+function saveTitle(id){
+  const input = document.getElementById('task-input-' + id);
+  if (!input) return;
+  const val = input.value.trim();
+  if (!val) return;
+  fetch('/api/task/' + id + '/title', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({title: val})
+  }).then(()=> location.reload());
+}
+
+function handleTitleKey(e, id){ if (e.key === 'Enter') saveTitle(id); }
+
+/* Add subtask prompt */
+function promptAddSubtask(parentId){
+  const title = prompt('Subtask title:');
+  if (!title) return;
+  fetch('/api/add', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+    body: 'title=' + encodeURIComponent(title) + '&parent_id=' + encodeURIComponent(parentId)
+  }).then(()=> location.reload());
+}
+
+/* Delete task */
+function deleteTask(id){
+  if (!confirm('Delete task and its subtasks?')) return;
+  fetch('/api/delete', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({id: id})
+  }).then(()=> location.reload());
+}
+
+/* Add to My Day */
+function addToMyDay(id, btn){
+  fetch('/api/task/' + id + '/today', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({is_today: 1})
+  }).then(()=> updateMyDayCount());
+}
+
+function updateMyDayCount(){
+  fetch('/api/list/myday').then(r=>r.json()).then(d=>{
+    const c = d.tasks ? d.tasks.length : 0;
+    document.getElementById('myday-count').textContent = c;
+  });
+}
 </script>
 {% endblock %}

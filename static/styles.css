@@ -140,3 +140,77 @@ button:hover, a:hover {
 .task-title {
   cursor: pointer;
 }
+
+/* basic three-column layout */
+.app-grid {
+  display: grid;
+  grid-template-columns: 20% 80%;
+  gap: 0;
+  min-height: 100vh;
+}
+
+/* sidebar styles */
+.sidebar {
+  background: #fff;
+  border-right: 1px solid #e9ecef;
+  min-height: 100vh;
+}
+
+/* collapsed sidebar */
+.sidebar.collapsed {
+  width: 68px !important;
+}
+.logo { width: 28px; height: 28px; object-fit: contain; }
+
+/* main area contains top add + content grid */
+.main-area {
+  padding: 1rem;
+}
+
+/* split main content to 40/40 inside the main area */
+.content-grid {
+  display: grid;
+  grid-template-columns: 40% 60%;
+  gap: 1rem;
+}
+
+/* task list pane */
+.task-list-pane {
+  overflow-y: auto;
+  max-height: calc(100vh - 160px);
+}
+
+/* detail pane */
+.detail-pane {
+  background: #fff;
+  padding: 12px;
+  min-height: 300px;
+}
+
+/* connector line for nested items */
+.connector-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: #e9ecef;
+  z-index: 0;
+}
+
+/* task-row hover actions */
+.task-row:hover .task-actions {
+  opacity: 1 !important;
+}
+
+/* selected active highlight */
+.active-task {
+  background: rgba(58,109,240,0.06);
+  border-left: 3px solid rgba(58,109,240,0.7);
+}
+
+/* small responsive rules */
+@media (max-width: 900px) {
+  .app-grid { grid-template-columns: 1fr; }
+  .content-grid { grid-template-columns: 1fr; }
+  .sidebar { display: none; }
+}

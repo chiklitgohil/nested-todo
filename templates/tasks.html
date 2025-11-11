@@ -1,45 +1,40 @@
-{# templates/tasks.html #}
+{# tasks.html - recursive macro for rendering nested tasks #}
 {% macro render_task(task, depth=0) %}
-<li class="list-group-item border-0 ps-{{ depth + 3 }} position-relative">
+<li class="list-group-item border-0 position-relative task-row" data-task-id="{{ task.id }}" style="--depth:{{ depth }};">
 
   {% if depth > 0 %}
-  <div class="connector-line"></div>
+  <div class="connector-line" style="left: calc(1rem + var(--depth) * 12px);"></div>
   {% endif %}
 
-  <div class="d-flex align-items-center justify-content-between task-item">
+  <div class="d-flex align-items-center justify-content-between px-2 py-1">
     <div class="d-flex align-items-center gap-2 flex-grow-1">
       <i class="fa-solid fa-grip-vertical text-secondary small"></i>
 
-      <form action="/toggle/{{ task.id }}" method="get" style="display:inline;">
-        <input type="checkbox" onchange="this.form.submit()" {% if task.is_done %}checked{% endif %}>
+      <form onsubmit="return false;" class="m-0 p-0">
+        <input class="form-check-input me-2" type="checkbox" onchange="toggleDone({{ task.id }})" {% if task.is_done %}checked{% endif %}>
       </form>
 
       <span class="task-title flex-grow-1 {% if task.is_done %}text-decoration-line-through text-muted{% endif %}"
-            id="task-title-{{ task.id }}"
-            onclick="enableEdit({{ task.id }})">{{ task.title }}</span>
+            id="task-title-{{ task.id }}" onclick="selectTask({{ task.id }})">{{ task.title }}</span>
 
-      <input type="text" class="form-control form-control-sm d-none"
+      <input type="text" class="form-control form-control-sm d-none task-edit-input"
              id="task-input-{{ task.id }}" value="{{ task.title }}"
-             onblur="saveEdit({{ task.id }})" onkeydown="handleKey(event, {{ task.id }})">
+             onblur="saveTitle({{ task.id }})" onkeydown="handleTitleKey(event, {{ task.id }})">
     </div>
 
-    <div class="task-actions opacity-0 d-flex align-items-center gap-2">
-      <button type="button" class="btn btn-sm btn-outline-success p-1"
-              onclick="showAddSubtask({{ task.id }})">
-        <i class="fa-solid fa-plus"></i>
-      </button>
-      <a href="/delete/{{ task.id }}" class="btn btn-sm btn-outline-danger p-1">
-        <i class="fa-solid fa-trash"></i>
-      </a>
+    <div class="task-actions d-flex align-items-center gap-1 opacity-0">
+      <button class="btn btn-sm btn-outline-success p-1" onclick="addToMyDay({{ task.id }}, this)"><i class="fa-solid fa-star"></i></button>
+      <button class="btn btn-sm btn-outline-primary p-1" onclick="promptAddSubtask({{ task.id }})"><i class="fa-solid fa-plus"></i></button>
+      <button class="btn btn-sm btn-outline-danger p-1" onclick="deleteTask({{ task.id }})"><i class="fa-solid fa-trash"></i></button>
     </div>
   </div>
 
   {% if task.children and task.children|length > 0 %}
-  <ul class="list-group border-0 ms-4 mt-2">
+    <ul class="list-group border-0 ms-3 mt-1">
       {% for child in task.children %}
-          {{ render_task(child, depth + 1) }}
+        {{ render_task(child, depth + 1) }}
       {% endfor %}
-  </ul>
+    </ul>
   {% endif %}
 </li>
 {% endmacro %}
