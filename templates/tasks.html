@@ -1,34 +1,45 @@
-{% macro render_task(task) %}
-<li style="--depth: {{ loop.depth0 }}">
-    <div class="task-row">
-        <button type="button" class="collapse-btn" onclick="toggleSubtasks({{ task.id }})">▼</button>
+{# templates/tasks.html #}
+{% macro render_task(task, depth=0) %}
+<li class="list-group-item border-0 ps-{{ depth + 3 }} position-relative">
 
-        <form action="/toggle/{{ task.id }}" method="get" class="inline">
-            <input type="checkbox" onchange="this.form.submit()" {% if task.is_done %}checked{% endif %}>
-        </form>
+  {% if depth > 0 %}
+  <div class="connector-line"></div>
+  {% endif %}
 
-        <span class="{% if task.is_done %}done{% endif %}" id="title-{{ task.id }}">{{ task.title }}</span>
+  <div class="d-flex align-items-center justify-content-between task-item">
+    <div class="d-flex align-items-center gap-2 flex-grow-1">
+      <i class="fa-solid fa-grip-vertical text-secondary small"></i>
 
-        <form action="/edit/{{ task.id }}" method="post" class="inline" id="edit-form-{{ task.id }}" style="display:none;">
-            <input type="text" name="new_title" value="{{ task.title }}">
-            <button type="submit">Save</button>
-        </form>
+      <form action="/toggle/{{ task.id }}" method="get" style="display:inline;">
+        <input type="checkbox" onchange="this.form.submit()" {% if task.is_done %}checked{% endif %}>
+      </form>
 
-        <button type="button" class="edit-btn" onclick="showEditForm({{ task.id }})">✏️</button>
-        <a href="/delete/{{ task.id }}" class="delete-btn">🗑️</a>
+      <span class="task-title flex-grow-1 {% if task.is_done %}text-decoration-line-through text-muted{% endif %}"
+            id="task-title-{{ task.id }}"
+            onclick="enableEdit({{ task.id }})">{{ task.title }}</span>
 
-        <form action="/add" method="post" class="inline add-subtask">
-            <input type="hidden" name="parent_id" value="{{ task.id }}">
-            <input type="text" name="title" placeholder="+ Add subtask">
-        </form>
+      <input type="text" class="form-control form-control-sm d-none"
+             id="task-input-{{ task.id }}" value="{{ task.title }}"
+             onblur="saveEdit({{ task.id }})" onkeydown="handleKey(event, {{ task.id }})">
     </div>
 
-    {% if task.children and task.children|length > 0 %}
-        <ul id="children-{{ task.id }}">
-            {% for child in task.children %}
-                {{ render_task(child) }}
-            {% endfor %}
-        </ul>
-    {% endif %}
+    <div class="task-actions opacity-0 d-flex align-items-center gap-2">
+      <button type="button" class="btn btn-sm btn-outline-success p-1"
+              onclick="showAddSubtask({{ task.id }})">
+        <i class="fa-solid fa-plus"></i>
+      </button>
+      <a href="/delete/{{ task.id }}" class="btn btn-sm btn-outline-danger p-1">
+        <i class="fa-solid fa-trash"></i>
+      </a>
+    </div>
+  </div>
+
+  {% if task.children and task.children|length > 0 %}
+  <ul class="list-group border-0 ms-4 mt-2">
+      {% for child in task.children %}
+          {{ render_task(child, depth + 1) }}
+      {% endfor %}
+  </ul>
+  {% endif %}
 </li>
 {% endmacro %}

@@ -1,16 +1,69 @@
 {% extends "layout.html" %}
 {% from "tasks.html" import render_task %}
-{% block content %}
-<h1>Nested To-Do List</h1>
 
-<form action="/add" method="post" class="add-form">
-    <input type="text" name="title" placeholder="Add new task" required>
-    <button type="submit">Add</button>
+{% block content %}
+<h2 class="mb-3 text-center">Nested To-Do List</h2>
+
+<form action="/add" method="post" class="d-flex mb-3 gap-2">
+  <input type="text" name="title" class="form-control" placeholder="Add a new task..." required>
+  <button type="submit" class="btn btn-primary">Add</button>
 </form>
 
-<ul class="tasks">
-    {% for task in tasks %}
-        {{ render_task(task) }}
-    {% endfor %}
+<ul class="list-group border rounded shadow-sm">
+  {% for task in tasks %}
+    {{ render_task(task) }}
+  {% endfor %}
 </ul>
+
+<!-- scripts must come after the list so elements exist -->
+<script>
+function enableEdit(id) {
+  document.getElementById('task-title-' + id).classList.add('d-none');
+  const input = document.getElementById('task-input-' + id);
+  input.classList.remove('d-none');
+  input.focus();
+}
+
+function handleKey(e, id) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    saveEdit(id);
+  }
+}
+
+function saveEdit(id) {
+  const newText = document.getElementById('task-input-' + id).value.trim();
+  if (!newText) return;
+  fetch('/edit/' + id, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: 'new_title=' + encodeURIComponent(newText)
+  }).then(() => location.reload());
+}
+
+function showAddSubtask(parentId) {
+  const title = prompt('Subtask title:');
+  if (!title) return;
+  const data = 'title=' + encodeURIComponent(title) + '&parent_id=' + encodeURIComponent(parentId);
+  fetch('/add', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: data
+  }).then(() => location.reload());
+}
+
+// show/hide hover actions
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.task-item').forEach(item => {
+    item.addEventListener('mouseenter', () => {
+      const actions = item.querySelector('.task-actions');
+      if (actions) actions.classList.remove('opacity-0');
+    });
+    item.addEventListener('mouseleave', () => {
+      const actions = item.querySelector('.task-actions');
+      if (actions) actions.classList.add('opacity-0');
+    });
+  });
+});
+</script>
 {% endblock %}
